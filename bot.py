@@ -53,7 +53,7 @@ class TicketFAQButtons(discord.ui.View):
     async def whop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Bitte wähle ein Thema aus:", view=WhopFAQDropdown(), ephemeral=True)
 
-# Button zum Ticket schließen
+# Button zum Ticket schließen mit Fehlerabfangung
 class CloseTicketView(discord.ui.View):
     @discord.ui.button(label="❌ Ticket schließen", style=discord.ButtonStyle.red)
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -61,7 +61,10 @@ class CloseTicketView(discord.ui.View):
         log_channel = discord.utils.get(interaction.guild.text_channels, name="ticket-log")
         if log_channel:
             await log_channel.send(f"📁 Ticket von {interaction.user.mention} wurde geschlossen: `{interaction.channel.name}`")
-        await interaction.channel.delete()
+        try:
+            await interaction.channel.delete()
+        except Exception as e:
+            await interaction.followup.send(f"Fehler beim Löschen des Tickets: {e}", ephemeral=True)
 
 # Button zum Ticket eröffnen
 class TicketButton(discord.ui.View):
