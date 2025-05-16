@@ -3,13 +3,15 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
+# Lädt lokale .env (lokal nutzbar, ignoriert, wenn keine .env da)
 load_dotenv()
 
+# Environment-Variablen (Railway setzt die automatisch)
 TOKEN = os.getenv("DISCORD_TOKEN")
 CATEGORY_ID = int(os.getenv("TICKET_CATEGORY_ID"))
 TICKET_CHANNEL_ID = int(os.getenv("TICKET_CHANNEL_ID"))
 SUPPORT_ROLE_NAME = os.getenv("SUPPORT_ROLE_NAME")
-WHOP_LINK = os.getenv("WHOP_LINK")  # Neuer env-Var für euren Shop-Link
+WHOP_LINK = os.getenv("WHOP_LINK") or "https://whop.com/bullnet-pro-ad/?a=bullnetinfo"
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -18,7 +20,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Dropdown-Menü mit Whop FAQ Unterkategorien
 class WhopFAQDropdown(discord.ui.View):
     @discord.ui.select(
         placeholder="Wähle ein Thema zu Whop...",
@@ -30,7 +31,6 @@ class WhopFAQDropdown(discord.ui.View):
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
         choice = select.values[0]
-
         if choice == "Discord verbinden":
             await interaction.response.send_message(
                 "🔗 So verbindest du deinen Discord:\n"
@@ -48,17 +48,15 @@ class WhopFAQDropdown(discord.ui.View):
                 "🚫 Prüfe:\n- Discord mit Whop verknüpft?\n- Rolle erhalten?\n- Weniger als 100 Server?\n- Discord neu starten.",
                 ephemeral=True)
 
-# Button, der das Whop-FAQ Dropdown öffnet
 class TicketFAQButtons(discord.ui.View):
     @discord.ui.button(label="Whop FAQ", style=discord.ButtonStyle.primary)
     async def whop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Bitte wähle ein Thema aus:", view=WhopFAQDropdown(), ephemeral=True)
 
-# Zusätzliche Links-Buttons für Whop-Shop, Indikator-Infos & Mute-Anleitung
 class ExtraInfoButtons(discord.ui.View):
-    @discord.ui.button(label="🔗 Whop-Shop", style=discord.ButtonStyle.link, url=WHOP_LINK)
-    async def whop_shop(self, interaction: discord.Interaction, button: discord.ui.Button):
-        pass  # Link-Button braucht keine Funktion
+    def __init__(self):
+        super().__init__()
+        self.add_item(discord.ui.Button(label="🔗 Whop-Shop", style=discord.ButtonStyle.link, url=WHOP_LINK))
 
     @discord.ui.button(label="📊 Indikator-Infos", style=discord.ButtonStyle.secondary)
     async def indicator_info(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -73,7 +71,6 @@ class ExtraInfoButtons(discord.ui.View):
             "- Rechtsklick auf den Channel → Benachrichtigungen → Stumm\n"
             "- Oder nutze die Server-Stummschaltung oben links.", ephemeral=True)
 
-# Button zum Ticket schließen mit Fehlerabfangung
 class CloseTicketView(discord.ui.View):
     @discord.ui.button(label="❌ Ticket schließen", style=discord.ButtonStyle.red)
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -86,7 +83,6 @@ class CloseTicketView(discord.ui.View):
         except Exception as e:
             await interaction.followup.send(f"Fehler beim Löschen des Tickets: {e}", ephemeral=True)
 
-# Button zum Ticket eröffnen
 class TicketButton(discord.ui.View):
     @discord.ui.button(label="🎫 Support-Ticket eröffnen", style=discord.ButtonStyle.green)
     async def open_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -94,9 +90,6 @@ class TicketButton(discord.ui.View):
         user = interaction.user
         category = discord.utils.get(guild.categories, id=CATEGORY_ID)
         support_role = guild.get_role(int(SUPPORT_ROLE_NAME)) if SUPPORT_ROLE_NAME.isdigit() else discord.utils.get(guild.roles, name=SUPPORT_ROLE_NAME)
-
-        print(f"[DEBUG] Support Rolle: {support_role} ({SUPPORT_ROLE_NAME})")
-        print(f"[DEBUG] Kategorie gefunden: {category}")
 
         if not category or not support_role:
             await interaction.response.send_message("❌ Kategorie oder Support-Rolle nicht gefunden.", ephemeral=True)
@@ -116,7 +109,7 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites, topic=str(user.id))
         await ticket_channel.send(f"{support_role.mention} | {user.mention}, willkommen beim Support! Nutze den Whop FAQ Button unten oder schreibe dein Anliegen.", view=TicketFAQButtons())
-        await ticket_channel.send(view=ExtraInfoButtons())  # Hier die neuen Buttons
+        await ticket_channel.send(view=ExtraInfoButtons())
         await ticket_channel.send(view=CloseTicketView())
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
