@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
+# 🔐 .env laden
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -10,6 +11,7 @@ CATEGORY_ID = int(os.getenv("TICKET_CATEGORY_ID"))
 TICKET_CHANNEL_ID = int(os.getenv("TICKET_CHANNEL_ID"))
 SUPPORT_ROLE_NAME = os.getenv("SUPPORT_ROLE_NAME")
 
+# ✅ Discord Intents aktivieren
 intents = discord.Intents.default()
 intents.guilds = True
 intents.members = True
@@ -22,25 +24,23 @@ class TradingFAQButtons(discord.ui.View):
     @discord.ui.button(label="🔐 Whop-Zugang funktioniert nicht", style=discord.ButtonStyle.secondary)
     async def whop_help(self, interaction, button):
         await interaction.response.send_message(
-            "📌 Bitte stelle sicher, dass du bei Whop den **richtigen Discord-Account** verknüpft hast. "
-            "Wenn der Zugang trotzdem nicht geht, schreib deine Bestellnummer oder E-Mail dazu.", ephemeral=True)
+            "📌 Stelle sicher, dass dein Discord-Account korrekt mit Whop verknüpft ist. "
+            "Gib bei Problemen bitte deine Bestellnummer oder E-Mail an.", ephemeral=True)
 
     @discord.ui.button(label="📈 Indikator wird nicht angezeigt", style=discord.ButtonStyle.secondary)
     async def indikator_help(self, interaction, button):
         await interaction.response.send_message(
-            "📊 Stelle sicher, dass du den Indikator gemäß Anleitung in #setup-indikator eingebunden hast. "
-            "Bei Problemen helfen wir dir hier im Ticket!", ephemeral=True)
+            "📊 Folge bitte der Anleitung in #setup-indikator. Falls es nicht klappt, helfen wir dir hier weiter.", ephemeral=True)
 
     @discord.ui.button(label="💳 Zahlungsfragen", style=discord.ButtonStyle.secondary)
     async def payment_help(self, interaction, button):
         await interaction.response.send_message(
-            "💳 Für Rechnungen oder Zahlungsprobleme gib bitte deine Whop-Bestellnummer oder E-Mail an. "
-            "Unser Finanzteam hilft dir weiter.", ephemeral=True)
+            "💳 Für Zahlungsfragen nenne uns bitte deine Whop-Bestellnummer. Unser Team meldet sich bald!", ephemeral=True)
 
     @discord.ui.button(label="💬 Allgemeine Frage", style=discord.ButtonStyle.secondary)
     async def general_help(self, interaction, button):
         await interaction.response.send_message(
-            "💬 Stell deine Frage einfach hier im Ticket – unser Support-Team antwortet dir so schnell wie möglich.", ephemeral=True)
+            "💬 Stelle deine Frage hier – unser Team antwortet schnellstmöglich.", ephemeral=True)
 
 # ❌ Ticket schließen
 class CloseTicketView(discord.ui.View):
@@ -61,6 +61,11 @@ class TicketButton(discord.ui.View):
         category = discord.utils.get(guild.categories, id=CATEGORY_ID)
         support_role = discord.utils.get(guild.roles, name=SUPPORT_ROLE_NAME)
 
+        # 🔍 Debug-Ausgabe
+        print(f"[DEBUG] Gesuchter Rollenname: {SUPPORT_ROLE_NAME}")
+        print(f"[DEBUG] Gefundene Rolle: {support_role}")
+        print(f"[DEBUG] Kategorie-ID: {CATEGORY_ID} | Gefunden: {category}")
+
         if not category or not support_role:
             await interaction.response.send_message("❌ Kategorie oder Support-Rolle nicht gefunden.", ephemeral=True)
             return
@@ -79,18 +84,18 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites, topic=str(user.id))
         await ticket_channel.send(
-            f"{support_role.mention} | {user.mention}, willkommen beim Support! Bitte wähle unten dein Anliegen oder beschreibe es direkt.",
+            f"{support_role.mention} | {user.mention}, willkommen beim Support! Wähle unten dein Anliegen oder schreibe es direkt.",
             view=TradingFAQButtons()
         )
         await ticket_channel.send(view=CloseTicketView())
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
-# 🎯 Automatischer Setup beim Bot-Start
+# 🚀 Automatisch Support-Button posten
 @bot.event
 async def on_ready():
     print(f"✅ Bot ist online als: {bot.user.name}")
     channel = bot.get_channel(TICKET_CHANNEL_ID)
     if channel:
-        await channel.send("🎟️ Klicke unten, um ein privates Support-Ticket zu eröffnen:", view=TicketButton())
+        await channel.send("🎟️ Brauchst du Hilfe? Klicke auf den Button:", view=TicketButton())
 
 bot.run(TOKEN)
