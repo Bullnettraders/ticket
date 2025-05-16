@@ -9,6 +9,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CATEGORY_ID = int(os.getenv("TICKET_CATEGORY_ID"))
 TICKET_CHANNEL_ID = int(os.getenv("TICKET_CHANNEL_ID"))
 SUPPORT_ROLE_NAME = os.getenv("SUPPORT_ROLE_NAME")
+WHOP_LINK = os.getenv("WHOP_LINK")  # Neuer env-Var für euren Shop-Link
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -53,6 +54,25 @@ class TicketFAQButtons(discord.ui.View):
     async def whop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Bitte wähle ein Thema aus:", view=WhopFAQDropdown(), ephemeral=True)
 
+# Zusätzliche Links-Buttons für Whop-Shop, Indikator-Infos & Mute-Anleitung
+class ExtraInfoButtons(discord.ui.View):
+    @discord.ui.button(label="🔗 Whop-Shop", style=discord.ButtonStyle.link, url=WHOP_LINK)
+    async def whop_shop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        pass  # Link-Button braucht keine Funktion
+
+    @discord.ui.button(label="📊 Indikator-Infos", style=discord.ButtonStyle.secondary)
+    async def indicator_info(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "📊 Unsere Indikatoren findest du in TradingView unter „Invite-only Scripts“. "
+            "Falls du Hilfe brauchst, melde dich hier.", ephemeral=True)
+
+    @discord.ui.button(label="🔇 Anleitung: Mute einstellen", style=discord.ButtonStyle.secondary)
+    async def mute_info(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "🔇 Um Benachrichtigungen stummzuschalten:\n"
+            "- Rechtsklick auf den Channel → Benachrichtigungen → Stumm\n"
+            "- Oder nutze die Server-Stummschaltung oben links.", ephemeral=True)
+
 # Button zum Ticket schließen mit Fehlerabfangung
 class CloseTicketView(discord.ui.View):
     @discord.ui.button(label="❌ Ticket schließen", style=discord.ButtonStyle.red)
@@ -96,6 +116,7 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites, topic=str(user.id))
         await ticket_channel.send(f"{support_role.mention} | {user.mention}, willkommen beim Support! Nutze den Whop FAQ Button unten oder schreibe dein Anliegen.", view=TicketFAQButtons())
+        await ticket_channel.send(view=ExtraInfoButtons())  # Hier die neuen Buttons
         await ticket_channel.send(view=CloseTicketView())
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
