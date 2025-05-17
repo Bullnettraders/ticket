@@ -1,11 +1,14 @@
 import os
-from dotenv import load_dotenv
+import logging
+import aiohttp
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
+WHOP_API_KEY = os.getenv("WHOP_API_KEY")
 CATEGORY_ID = int(os.getenv("TICKET_CATEGORY_ID"))
 TICKET_CHANNEL_ID = int(os.getenv("TICKET_CHANNEL_ID"))
 SUPPORT_ROLE_NAME = os.getenv("SUPPORT_ROLE_NAME")
@@ -16,6 +19,30 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Setup Logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("whop_api")
+
+WHOP_PRODUCTS_URL = "https://api.whop.com/api/v2/products"
+
+async def fetch_whop_products():
+    headers = {
+        "Authorization": f"Bearer {WHOP_API_KEY}"
+    }
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(WHOP_PRODUCTS_URL, headers=headers, timeout=10) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    logger.info("Whop Produkte erfolgreich abgerufen")
+                    return data.get("products", [])
+                else:
+                    logger.warning(f"Whop API Fehler: Status {resp.status}")
+                    return None
+        except Exception as e:
+            logger.error(f"Fehler bei Whop API Anfrage: {e}")
+            return None
 
 class CloseTicketView(discord.ui.View):
     @discord.ui.button(label="❌ Ticket schließen", style=discord.ButtonStyle.red)
@@ -80,7 +107,6 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites)
 
-        # Kurze Begrüßung
         await ticket_channel.send(
             f"Hallo {user.mention}, du schreibst mit Kalle! Ich beantworte viele Fragen automatisch. "
             "Wenn du möchtest, kannst du auch direkt mit dem Support-Team sprechen (Tippe einfach!).",
@@ -125,13 +151,17 @@ async def on_message(message):
                 delete_after=60)
             recognized = True
         elif any(word in content for word in keywords_pakete):
-            await message.channel.send(
-                "**Pakete & Preise:**\n"
-                "• Classic: kostenlos\n"
-                "• Pro: ab 89 Euro, inkl. 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
-                "• Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
-                "Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
-                delete_after=60)
+            # Dynamische Preise von Whop API holen
+            products = await fetch_whop_products()
+            if products:
+                response = "**Pakete & Preise:**\n"
+                for p in products:
+                    response += f"- {p['name']}: {p['price']} {p.get('currency', '')} \n  Link: {p.get('url', 'kein Link verfügbar')}\n"
+                await message.channel.send(response, delete_after=60)
+            else:
+                await message.channel.send(
+                    "Entschuldigung, die Paketinfos sind gerade nicht verfügbar.",
+                    delete_after=30)
             recognized = True
         elif any(word in content for word in keywords_whop):
             await message.channel.send(
