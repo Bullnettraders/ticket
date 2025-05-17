@@ -69,15 +69,15 @@ class TicketButton(discord.ui.View):
 
 class SupportConfirmView(discord.ui.View):
     def __init__(self, support_role):
-        super().__init__(timeout=60)
+        super().__init__(timeout=120)
         self.support_role = support_role
 
-    @discord.ui.button(label="Ja", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Ja, Support-Team kontaktieren", style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(f"{self.support_role.mention} | {interaction.user.mention} braucht Support!", ephemeral=True)
+        await interaction.response.send_message(f"{self.support_role.mention} | {interaction.user.mention} braucht Unterstützung!", ephemeral=True)
         self.stop()
 
-    @discord.ui.button(label="Nein", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="Nein, danke", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Okay, wie kann ich dir sonst noch helfen?", ephemeral=True)
         self.stop()
@@ -90,7 +90,7 @@ async def on_message(message):
     if message.channel.name.startswith("ticket-"):
         content = message.content.lower()
 
-        # Beispielhafte Keywordlisten für automatisierte Antworten
+        # Beispiel Keyword-Listen für automatische Antworten
         keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial"]
         keywords_indikatoren = ["indikator", "indikatoren", "funktion", "erklärung"]
         keywords_pakete = ["paket", "preise", "upgrade"]
@@ -132,6 +132,7 @@ async def on_message(message):
                 support_role = guild.get_role(int(SUPPORT_ROLE_NAME))
             else:
                 support_role = discord.utils.get(guild.roles, name=SUPPORT_ROLE_NAME)
+
             if support_role:
                 await message.channel.send("Ich konnte dir nicht weiterhelfen. Möchtest du mit dem Support-Team sprechen?", view=SupportConfirmView(support_role), ephemeral=True)
             else:
