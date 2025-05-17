@@ -68,6 +68,80 @@ class TicketButton(discord.ui.View):
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
 @bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if message.channel.name.startswith("ticket-"):
+        content = message.content.lower()
+
+        # Allgemeine Fragen
+        keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial", "vorstellen", "live-session", "mentor", "feedback"]
+        if any(word in content for word in keywords_allgemein):
+            await message.channel.send(
+                "💡 **Allgemeine Infos:**\n"
+                "- Starte mit unserem Einsteiger-Guide im #lernbereich.\n"
+                "- Die Community-Regeln findest du im Channel #regeln.\n"
+                "- Es gibt regelmäßige Live-Trading-Sessions Mo-Fr um 18 Uhr.\n"
+                "- Kontaktiere Mentoren über den Support oder im #mentor-chat.\n"
+                "- Feedback und Vorschläge sind im Channel #feedback willkommen.",
+                delete_after=60)
+            return
+
+        # Indikator-Fragen
+        keywords_indikatoren = ["indikator", "indikatoren", "tradingview", "funktion", "erklärung", "was können die indikator"]
+        if any(word in content for word in keywords_indikatoren):
+            await message.channel.send(
+                "**Unsere Indikatoren im Überblick:**\n"
+                "- **HELD:** Erkennung von starken Trends und Einstiegen.\n"
+                "- **ESXY:** Volatilitäts- und Momentum-Analyse.\n"
+                "- **COMO:** Vielseitige Marktanalyse und Signale.\n"
+                "- **GAPA:** Fokus auf Breakouts und Kurslücken.\n"
+                "- **DESC:** Detailanalyse von Kursbewegungen.\n"
+                "- **BAS:** Bullnet Strategie mit ca. 80% Trefferquote.\n"
+                "- **GABO:** Kombinierte Signale für präzise Einstiege.",
+                delete_after=60)
+            return
+
+        # Pakete & Preise
+        keywords_pakete = ["paket", "preise", "classic", "pro", "elite", "unterschied", "upgrade"]
+        if any(word in content for word in keywords_pakete):
+            await message.channel.send(
+                "**Unsere Pakete:**\n"
+                "- Classic: kostenlos\n"
+                "- Pro: ab 89 Euro, inkl. 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
+                "- Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
+                "Zum Upgrade und Buchung: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=60)
+            return
+
+        # Whop & Zahlung
+        keywords_whop = ["whop", "zahlung", "abo", "kündigen", "geld zurück", "shop"]
+        if any(word in content for word in keywords_whop):
+            await message.channel.send(
+                "💳 **Zahlungen und Whop:**\n"
+                "- Zahlungen laufen über Whop.com.\n"
+                "- Du kannst dein Abo jederzeit kündigen.\n"
+                "- Geld-zurück-Garantie je nach Paketbedingungen.\n"
+                "- Shop-Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=60)
+            return
+
+        # Technik & Zugriffsfragen
+        keywords_technik = ["channel sehen", "rolle", "discord verbinden", "zugriff", "benachrichtigung", "stumm"]
+        if any(word in content for word in keywords_technik):
+            await message.channel.send(
+                "🔧 **Technik & Zugriff:**\n"
+                "- Du brauchst mindestens das Pro-Paket für Zugriff auf alle Channels.\n"
+                "- Verknüpfe deinen Discord Account auf Whop.com im Profil.\n"
+                "- Falls du keine Rolle hast, melde dich im Support.\n"
+                "- Benachrichtigungen kannst du per Rechtsklick auf den Channel stumm schalten.",
+                delete_after=60)
+            return
+
+    await bot.process_commands(message)
+
+@bot.event
 async def on_ready():
     print(f"✅ Bot ist online als: {bot.user.name}")
     channel = bot.get_channel(TICKET_CHANNEL_ID)
