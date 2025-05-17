@@ -17,15 +17,19 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Ticket schließen View
+# Ticket schließen View mit Fehlerbehandlung
 class CloseTicketView(discord.ui.View):
     @discord.ui.button(label="❌ Ticket schließen", style=discord.ButtonStyle.red)
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("🗑️ Ticket wird geschlossen...", ephemeral=True)
         try:
             await interaction.channel.delete()
+        except discord.Forbidden:
+            await interaction.followup.send("❌ Ich habe keine Rechte, um diesen Channel zu löschen. Bitte überprüfe meine Berechtigungen.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.followup.send(f"❌ Fehler beim Löschen des Channels: {e}", ephemeral=True)
         except Exception as e:
-            await interaction.followup.send(f"Fehler beim Löschen des Tickets: {e}", ephemeral=True)
+            await interaction.followup.send(f"❌ Unerwarteter Fehler: {e}", ephemeral=True)
 
 # Ticket öffnen Button
 class TicketButton(discord.ui.View):
@@ -77,32 +81,54 @@ async def on_message(message):
         keywords_indikatoren = ["indikator", "indikatoren", "tradingview", "trading"]
         keywords_preise = ["preis", "preise", "kosten"]
         keywords_erwerbbar = ["erwerbbar", "kaufen", "shop", "erhalten"]
+        keywords_einzeln = ["einzeln buchen", "einzelner indikator", "preis indikator", "preis je indikator"]
+        keywords_classic_pro = ["unterschied classic pro", "classic vs pro", "was ist pro"]
+        keywords_pro_elite = ["unterschied pro elite", "pro vs elite", "was ist elite"]
 
         if any(word in content for word in keywords_upgrade):
             await message.channel.send(
                 "🔒 Du benötigst mindestens das Pro-Paket, um Zugriff auf diese Channels zu erhalten. "
                 "Hier kannst du upgraden: https://whop.com/pro-upgrade",
-                delete_after=20)
+                delete_after=30)
 
         elif any(word in content for word in keywords_link_upgrade):
             await message.channel.send(
                 "🔗 Hier findest du den Link zum Whop Pro Upgrade: https://whop.com/pro-upgrade",
-                delete_after=20)
+                delete_after=30)
 
         elif any(word in content for word in keywords_indikatoren):
             await message.channel.send(
-                "📊 Die Indikatoren findest du hier: https://whop.com/marketplace/trading-indicators/",
-                delete_after=20)
+                "📈 Um die Indikatoren in TradingView zu finden, klicke links auf 'Indikatoren' und dann im Bereich 'Invite-only' findest du unsere exklusiven Skripte.\n"
+                "👉 Hier geht’s zum Whop-Shop: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=40)
 
         elif any(word in content for word in keywords_preise):
             await message.channel.send(
-                "💰 Die Preise variieren je nach Indikator. Mehr Infos hier: https://whop.com/marketplace/trading-indicators/",
-                delete_after=20)
+                "💼 Unsere Pakete und Preise:\n"
+                "• Classic – kostenlos\n"
+                "• Pro – ab 89 Euro, inklusive 5 Indikatoren\n"
+                "• Elite – ab 299 Euro, inklusive alle Indikatoren plus den BAS Indikator",
+                delete_after=40)
 
-        elif any(word in content for word in keywords_erwerbbar):
+        elif any(word in content for word in keywords_einzeln):
             await message.channel.send(
-                "🛒 Verfügbare Indikatoren findest du im Whop Marketplace: https://whop.com/marketplace/trading-indicators/",
-                delete_after=20)
+                "💡 Du kannst die Indikatoren auch einzeln buchen. Preis je Indikator: 24,99 € zzgl. MwSt.\n"
+                "👉 Hier zum Einzelkauf: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=40)
+
+        elif any(word in content for word in keywords_classic_pro):
+            await message.channel.send(
+                "ℹ️ Unterschied Classic und Pro:\n"
+                "Classic ist kostenlos und bietet Grundfunktionen.\n"
+                "Pro enthält zusätzlich den kompletten Schulungsbereich, News und Live-Calls.",
+                delete_after=40)
+
+        elif any(word in content for word in keywords_pro_elite):
+            await message.channel.send(
+                "🔥 Unterschied Pro und Elite:\n"
+                "Elite bietet vollen Zugriff inklusive Discord und der Bullnet Strategie mit dem BAS Indikator, "
+                "der eine Trefferquote von 80% hat.",
+                delete_after=40)
 
     await bot.process_commands(message)
 
