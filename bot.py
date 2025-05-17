@@ -20,7 +20,6 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Setup Logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("whop_api")
 
@@ -130,6 +129,7 @@ async def on_message(message):
         keywords_pakete = ["paket", "preise", "upgrade"]
         keywords_whop = ["whop", "zahlung", "abo", "kündigen"]
         keywords_technik = ["channel sehen", "rolle", "discord verbinden", "zugriff"]
+        keywords_unterschiede = ["unterschied classic pro", "classic vs pro", "was ist pro", "unterschied pro elite", "pro vs elite", "was ist elite"]
 
         recognized = False
 
@@ -151,17 +151,28 @@ async def on_message(message):
                 delete_after=60)
             recognized = True
         elif any(word in content for word in keywords_pakete):
-            # Dynamische Preise von Whop API holen
             products = await fetch_whop_products()
             if products:
-                response = "**Pakete & Preise:**\n"
+                response = "**Unsere aktuellen Pakete:**\n"
                 for p in products:
-                    response += f"- {p['name']}: {p['price']} {p.get('currency', '')} \n  Link: {p.get('url', 'kein Link verfügbar')}\n"
+                    name = p.get("name", "Unbekanntes Paket")
+                    price = p.get("price", "Preis nicht verfügbar")
+                    currency = p.get("currency", "")
+                    url = p.get("url") or p.get("product_url") or "Kein Link verfügbar"
+                    response += f"- [{name}]({url}): {price} {currency}\n"
                 await message.channel.send(response, delete_after=60)
             else:
                 await message.channel.send(
-                    "Entschuldigung, die Paketinfos sind gerade nicht verfügbar.",
-                    delete_after=30)
+                    "Entschuldigung, die Paketinfos sind gerade nicht verfügbar.", delete_after=30)
+            recognized = True
+        elif any(word in content for word in keywords_unterschiede):
+            await message.channel.send(
+                "**Unterschiede zwischen Classic, Pro und Elite:**\n"
+                "• Classic: Kostenlos, Basisfunktionen.\n"
+                "• Pro: Ab 89€ inkl. 5 Indikatoren, Schulungsbereich, News, Live-Calls.\n"
+                "• Elite: Ab 299€ mit allen Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang.\n"
+                "Hier kannst du upgraden: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=60)
             recognized = True
         elif any(word in content for word in keywords_whop):
             await message.channel.send(
