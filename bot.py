@@ -80,37 +80,11 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites)
 
-        # Begrüßung + Support-Option + FAQ-Infos beim Ticketstart
+        # Kurze Begrüßung
         await ticket_channel.send(
-            f"Hallo {user.mention}, du schreibst gerade mit Kalle! Ich beantworte viele deiner Fragen automatisch. "
-            "Möchtest du direkt mit dem Support-Team sprechen?",
+            f"Hallo {user.mention}, du schreibst mit Kalle! Ich beantworte viele Fragen automatisch. "
+            "Wenn du möchtest, kannst du auch direkt mit dem Support-Team sprechen (Tippe einfach!).",
             view=SupportConfirmView(support_role)
-        )
-
-        await ticket_channel.send(
-            "**Preise und Pakete:**\n"
-            "• Classic: kostenlos\n"
-            "• Pro: ab 89 Euro, inklusive 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
-            "• Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
-            "Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo"
-        )
-
-        await ticket_channel.send(
-            "**Unsere Indikatoren:**\n"
-            "• HELD – Starke Trend-Erkennung\n"
-            "• ESXY – Volatilitäts- und Momentum-Analyse\n"
-            "• COMO – Marktanalyse und Signale\n"
-            "• GAPA – Breakouts & Kurslücken\n"
-            "• DESC – Detailanalyse von Kursbewegungen\n"
-            "• BAS – Bullnet Strategie, ca. 80% Trefferquote\n"
-            "• GABO – Kombination verschiedener Signale"
-        )
-
-        await ticket_channel.send(
-            "**Rollen & Zugriffe:**\n"
-            "• Support-Rolle: Zugang zu Support-Tickets\n"
-            "• Pro-Mitglieder: Zugang zu Schulungen und 5 Indikatoren\n"
-            "• Elite-Mitglieder: Voller Zugriff inkl. VIP-Bereich und BAS-Indikator"
         )
 
         await ticket_channel.send(view=CloseTicketView())
@@ -126,7 +100,7 @@ async def on_message(message):
         content = message.content.lower()
 
         keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial"]
-        keywords_indikatoren = ["indikator", "indikatoren", "funktion", "erklärung"]
+        keywords_indikatoren = ["indikator", "indikatoren", "funktion", "erklärung", "was können die indikator"]
         keywords_pakete = ["paket", "preise", "upgrade"]
         keywords_whop = ["whop", "zahlung", "abo", "kündigen"]
         keywords_technik = ["channel sehen", "rolle", "discord verbinden", "zugriff"]
@@ -140,13 +114,24 @@ async def on_message(message):
             recognized = True
         elif any(word in content for word in keywords_indikatoren):
             await message.channel.send(
-                "📊 Unsere Indikatoren helfen dir bei Trading-Entscheidungen. Schreib gern für Details!",
-                delete_after=30)
+                "**Unsere Indikatoren:**\n"
+                "• HELD – Starke Trend-Erkennung\n"
+                "• ESXY – Volatilitäts- und Momentum-Analyse\n"
+                "• COMO – Marktanalyse und Signale\n"
+                "• GAPA – Breakouts & Kurslücken\n"
+                "• DESC – Detailanalyse von Kursbewegungen\n"
+                "• BAS – Bullnet Strategie, ca. 80% Trefferquote\n"
+                "• GABO – Kombination verschiedener Signale",
+                delete_after=60)
             recognized = True
         elif any(word in content for word in keywords_pakete):
             await message.channel.send(
-                "💼 Infos zu Paketen und Preisen findest du auf Whop: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
-                delete_after=30)
+                "**Pakete & Preise:**\n"
+                "• Classic: kostenlos\n"
+                "• Pro: ab 89 Euro, inkl. 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
+                "• Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
+                "Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=60)
             recognized = True
         elif any(word in content for word in keywords_whop):
             await message.channel.send(
