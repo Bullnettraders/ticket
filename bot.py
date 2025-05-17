@@ -67,6 +67,21 @@ class TicketButton(discord.ui.View):
         await ticket_channel.send(f"{support_role.mention} | {user.mention}, willkommen beim Support! Schreibe hier dein Anliegen.", view=CloseTicketView())
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
+class SupportConfirmView(discord.ui.View):
+    def __init__(self, support_role):
+        super().__init__(timeout=60)
+        self.support_role = support_role
+
+    @discord.ui.button(label="Ja", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(f"{self.support_role.mention} | {interaction.user.mention} braucht Support!", ephemeral=True)
+        self.stop()
+
+    @discord.ui.button(label="Nein", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Okay, wie kann ich dir sonst noch helfen?", ephemeral=True)
+        self.stop()
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -75,69 +90,52 @@ async def on_message(message):
     if message.channel.name.startswith("ticket-"):
         content = message.content.lower()
 
-        # Allgemeine Fragen
-        keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial", "vorstellen", "live-session", "mentor", "feedback"]
+        # Beispielhafte Keywordlisten für automatisierte Antworten
+        keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial"]
+        keywords_indikatoren = ["indikator", "indikatoren", "funktion", "erklärung"]
+        keywords_pakete = ["paket", "preise", "upgrade"]
+        keywords_whop = ["whop", "zahlung", "abo", "kündigen"]
+        keywords_technik = ["channel sehen", "rolle", "discord verbinden", "zugriff"]
+
+        recognized = False
+
         if any(word in content for word in keywords_allgemein):
             await message.channel.send(
-                "💡 **Allgemeine Infos:**\n"
-                "- Starte mit unserem Einsteiger-Guide im #lernbereich.\n"
-                "- Die Community-Regeln findest du im Channel #regeln.\n"
-                "- Es gibt regelmäßige Live-Trading-Sessions Mo-Fr um 18 Uhr.\n"
-                "- Kontaktiere Mentoren über den Support oder im #mentor-chat.\n"
-                "- Feedback und Vorschläge sind im Channel #feedback willkommen.",
-                delete_after=60)
-            return
-
-        # Indikator-Fragen
-        keywords_indikatoren = ["indikator", "indikatoren", "tradingview", "funktion", "erklärung", "was können die indikator"]
-        if any(word in content for word in keywords_indikatoren):
+                "💡 Allgemeine Infos findest du im #lernbereich und den Regeln.",
+                delete_after=30)
+            recognized = True
+        elif any(word in content for word in keywords_indikatoren):
             await message.channel.send(
-                "**Unsere Indikatoren im Überblick:**\n"
-                "- **HELD:** Erkennung von starken Trends und Einstiegen.\n"
-                "- **ESXY:** Volatilitäts- und Momentum-Analyse.\n"
-                "- **COMO:** Vielseitige Marktanalyse und Signale.\n"
-                "- **GAPA:** Fokus auf Breakouts und Kurslücken.\n"
-                "- **DESC:** Detailanalyse von Kursbewegungen.\n"
-                "- **BAS:** Bullnet Strategie mit ca. 80% Trefferquote.\n"
-                "- **GABO:** Kombinierte Signale für präzise Einstiege.",
-                delete_after=60)
-            return
-
-        # Pakete & Preise
-        keywords_pakete = ["paket", "preise", "classic", "pro", "elite", "unterschied", "upgrade"]
-        if any(word in content for word in keywords_pakete):
+                "📊 Unsere Indikatoren helfen dir bei Trading-Entscheidungen. Schreib gern für Details!",
+                delete_after=30)
+            recognized = True
+        elif any(word in content for word in keywords_pakete):
             await message.channel.send(
-                "**Unsere Pakete:**\n"
-                "- Classic: kostenlos\n"
-                "- Pro: ab 89 Euro, inkl. 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
-                "- Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
-                "Zum Upgrade und Buchung: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
-                delete_after=60)
-            return
-
-        # Whop & Zahlung
-        keywords_whop = ["whop", "zahlung", "abo", "kündigen", "geld zurück", "shop"]
-        if any(word in content for word in keywords_whop):
+                "💼 Infos zu Paketen und Preisen findest du auf Whop: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
+                delete_after=30)
+            recognized = True
+        elif any(word in content for word in keywords_whop):
             await message.channel.send(
-                "💳 **Zahlungen und Whop:**\n"
-                "- Zahlungen laufen über Whop.com.\n"
-                "- Du kannst dein Abo jederzeit kündigen.\n"
-                "- Geld-zurück-Garantie je nach Paketbedingungen.\n"
-                "- Shop-Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo",
-                delete_after=60)
-            return
-
-        # Technik & Zugriffsfragen
-        keywords_technik = ["channel sehen", "rolle", "discord verbinden", "zugriff", "benachrichtigung", "stumm"]
-        if any(word in content for word in keywords_technik):
+                "💳 Zahlungen und Abo-Infos sind auf Whop verfügbar. Hilfe gern hier im Support!",
+                delete_after=30)
+            recognized = True
+        elif any(word in content for word in keywords_technik):
             await message.channel.send(
-                "🔧 **Technik & Zugriff:**\n"
-                "- Du brauchst mindestens das Pro-Paket für Zugriff auf alle Channels.\n"
-                "- Verknüpfe deinen Discord Account auf Whop.com im Profil.\n"
-                "- Falls du keine Rolle hast, melde dich im Support.\n"
-                "- Benachrichtigungen kannst du per Rechtsklick auf den Channel stumm schalten.",
-                delete_after=60)
-            return
+                "🔧 Für Zugriffsprobleme und Discord-Verknüpfung hilft unser Support-Team.",
+                delete_after=30)
+            recognized = True
+
+        if not recognized:
+            support_role = None
+            guild = message.guild
+            if SUPPORT_ROLE_NAME.isdigit():
+                support_role = guild.get_role(int(SUPPORT_ROLE_NAME))
+            else:
+                support_role = discord.utils.get(guild.roles, name=SUPPORT_ROLE_NAME)
+            if support_role:
+                await message.channel.send("Ich konnte dir nicht weiterhelfen. Möchtest du mit dem Support-Team sprechen?", view=SupportConfirmView(support_role), ephemeral=True)
+            else:
+                await message.channel.send("Support-Rolle nicht gefunden, bitte wende dich direkt an einen Moderator.", ephemeral=True)
 
     await bot.process_commands(message)
 
