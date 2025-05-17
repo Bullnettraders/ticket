@@ -80,12 +80,39 @@ class TicketButton(discord.ui.View):
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites)
 
-        # Begrüßung + Support-Option direkt beim Ticketstart
+        # Begrüßung + Support-Option + FAQ-Infos beim Ticketstart
         await ticket_channel.send(
             f"Hallo {user.mention}, du schreibst gerade mit Kalle! Ich beantworte viele deiner Fragen automatisch. "
             "Möchtest du direkt mit dem Support-Team sprechen?",
             view=SupportConfirmView(support_role)
         )
+
+        await ticket_channel.send(
+            "**Preise und Pakete:**\n"
+            "• Classic: kostenlos\n"
+            "• Pro: ab 89 Euro, inklusive 5 Indikatoren, Schulungsbereich, News, Live-Calls\n"
+            "• Elite: ab 299 Euro, alle Indikatoren, Bullnet Strategie mit BAS Indikator, voller Discord-Zugang\n"
+            "Link: https://whop.com/bullnet-pro-ad/?a=bullnetinfo"
+        )
+
+        await ticket_channel.send(
+            "**Unsere Indikatoren:**\n"
+            "• HELD – Starke Trend-Erkennung\n"
+            "• ESXY – Volatilitäts- und Momentum-Analyse\n"
+            "• COMO – Marktanalyse und Signale\n"
+            "• GAPA – Breakouts & Kurslücken\n"
+            "• DESC – Detailanalyse von Kursbewegungen\n"
+            "• BAS – Bullnet Strategie, ca. 80% Trefferquote\n"
+            "• GABO – Kombination verschiedener Signale"
+        )
+
+        await ticket_channel.send(
+            "**Rollen & Zugriffe:**\n"
+            "• Support-Rolle: Zugang zu Support-Tickets\n"
+            "• Pro-Mitglieder: Zugang zu Schulungen und 5 Indikatoren\n"
+            "• Elite-Mitglieder: Voller Zugriff inkl. VIP-Bereich und BAS-Indikator"
+        )
+
         await ticket_channel.send(view=CloseTicketView())
 
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
