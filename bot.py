@@ -77,4 +77,37 @@ async def on_ready():
     if channel:
         await channel.send("🎟️ Brauchst du Hilfe? Klicke hier, um ein Ticket zu eröffnen:", view=TicketButton())
 
+@bot.event
+async def on_message(message):
+    # Ignoriere Bot-Nachrichten
+    if message.author.bot:
+        return
+
+    # Prüfe, ob es ein Ticket-Channel ist (z.B. Name beginnt mit "ticket-")
+    if message.channel.name.startswith("ticket-"):
+        content = message.content.lower()
+
+        # Beispiel-Schlüsselwörter und passende Antworten
+        if "lizenz" in content or "license" in content:
+            await message.channel.send(
+                "🔑 Du suchst deine Lizenz? Schau in deinem Whop-Dashboard unter Orders → View.",
+                delete_after=20)
+        elif "zahlung" in content or "pay" in content or "rechn" in content:
+            await message.channel.send(
+                "💳 Zahlungsfragen? Bitte wende dich an support@whop.com oder prüfe deine Zahlungsdetails bei Whop.",
+                delete_after=20)
+        elif "discord verbinden" in content or "connect" in content:
+            await message.channel.send(
+                "🔗 So verknüpfst du Discord mit Whop:\n1. Gehe zu https://whop.com\n2. Klicke auf dein Profil → Connect Discord",
+                delete_after=20)
+        elif "indikator" in content or "indicator" in content:
+            await message.channel.send(
+                "📊 Für den Indikator in TradingView:\nKlicke in TradingView auf Indikatoren → Invite-only Scripts.",
+                delete_after=20)
+        # Füge gerne mehr Schlüsselwörter hinzu!
+
+    # Wichtig: sonst keine Commands blockieren
+    await bot.process_commands(message)
+
+
 bot.run(TOKEN)
