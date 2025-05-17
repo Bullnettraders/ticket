@@ -32,6 +32,21 @@ class CloseTicketView(discord.ui.View):
         except Exception as e:
             await interaction.followup.send(f"❌ Unerwarteter Fehler: {e}", ephemeral=True)
 
+class SupportConfirmView(discord.ui.View):
+    def __init__(self, support_role):
+        super().__init__(timeout=120)
+        self.support_role = support_role
+
+    @discord.ui.button(label="Ja, Support-Team kontaktieren", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(f"{self.support_role.mention} | {interaction.user.mention} braucht Unterstützung!", ephemeral=True)
+        self.stop()
+
+    @discord.ui.button(label="Nein, danke", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Okay, wie kann ich dir sonst noch helfen?", ephemeral=True)
+        self.stop()
+
 class TicketButton(discord.ui.View):
     @discord.ui.button(label="🎫 Support-Ticket eröffnen", style=discord.ButtonStyle.green)
     async def open_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -64,23 +79,16 @@ class TicketButton(discord.ui.View):
         }
 
         ticket_channel = await guild.create_text_channel(channel_name, category=category, overwrites=overwrites)
-        await ticket_channel.send(f"{support_role.mention} | {user.mention}, willkommen beim Support! Schreibe hier dein Anliegen.", view=CloseTicketView())
+
+        # Begrüßung + Support-Option direkt beim Ticketstart
+        await ticket_channel.send(
+            f"Hallo {user.mention}, du schreibst gerade mit Kalle! Ich beantworte viele deiner Fragen automatisch. "
+            "Möchtest du direkt mit dem Support-Team sprechen?",
+            view=SupportConfirmView(support_role)
+        )
+        await ticket_channel.send(view=CloseTicketView())
+
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
-
-class SupportConfirmView(discord.ui.View):
-    def __init__(self, support_role):
-        super().__init__(timeout=120)
-        self.support_role = support_role
-
-    @discord.ui.button(label="Ja, Support-Team kontaktieren", style=discord.ButtonStyle.green)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(f"{self.support_role.mention} | {interaction.user.mention} braucht Unterstützung!", ephemeral=True)
-        self.stop()
-
-    @discord.ui.button(label="Nein, danke", style=discord.ButtonStyle.red)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("Okay, wie kann ich dir sonst noch helfen?", ephemeral=True)
-        self.stop()
 
 @bot.event
 async def on_message(message):
@@ -90,7 +98,6 @@ async def on_message(message):
     if message.channel.name.startswith("ticket-"):
         content = message.content.lower()
 
-        # Beispiel Keyword-Listen für automatische Antworten
         keywords_allgemein = ["trading starten", "regeln", "lernbereich", "tutorial"]
         keywords_indikatoren = ["indikator", "indikatoren", "funktion", "erklärung"]
         keywords_pakete = ["paket", "preise", "upgrade"]
