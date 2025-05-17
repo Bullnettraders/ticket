@@ -63,13 +63,7 @@ class TicketButton(discord.ui.View):
         await ticket_channel.send(f"{support_role.mention} | {user.mention}, willkommen beim Support! Schreibe hier dein Anliegen.", view=CloseTicketView())
         await interaction.response.send_message(f"✅ Ticket erstellt: {ticket_channel.mention}", ephemeral=True)
 
-@bot.event
-async def on_ready():
-    print(f"✅ Bot ist online als: {bot.user.name}")
-    channel = bot.get_channel(TICKET_CHANNEL_ID)
-    if channel:
-        await channel.send("🎟️ Brauchst du Hilfe? Klicke hier, um ein Ticket zu eröffnen:", view=TicketButton())
-
+# Keyword-Erkennung für automatische Antworten
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -78,23 +72,45 @@ async def on_message(message):
     if message.channel.name.startswith("ticket-"):
         content = message.content.lower()
 
-        if "lizenz" in content:
+        keywords_upgrade = ["upgrade", "pro paket", "kanäle sehen", "channels sehen", "zugriff"]
+        keywords_link_upgrade = ["link upgrade", "upgrade link", "upgrade"]
+        keywords_indikatoren = ["indikator", "indikatoren", "tradingview", "trading"]
+        keywords_preise = ["preis", "preise", "kosten"]
+        keywords_erwerbbar = ["erwerbbar", "kaufen", "shop", "erhalten"]
+
+        if any(word in content for word in keywords_upgrade):
             await message.channel.send(
-                "🔑 Du suchst deine Lizenz? Schau in deinem Whop-Dashboard unter Orders → View.",
+                "🔒 Du benötigst mindestens das Pro-Paket, um Zugriff auf diese Channels zu erhalten. "
+                "Hier kannst du upgraden: https://whop.com/pro-upgrade",
                 delete_after=20)
-        elif "zahlung" in content:
+
+        elif any(word in content for word in keywords_link_upgrade):
             await message.channel.send(
-                "💳 Zahlungsfragen? Bitte wende dich an support@whop.com oder prüfe deine Zahlungsdetails bei Whop.",
+                "🔗 Hier findest du den Link zum Whop Pro Upgrade: https://whop.com/pro-upgrade",
                 delete_after=20)
-        elif "discord verbinden" in content or "connect" in content:
+
+        elif any(word in content for word in keywords_indikatoren):
             await message.channel.send(
-                "🔗 So verknüpfst du deinen Discord:\n1. Gehe zu https://whop.com\n2. Klicke auf dein Profil → Connect Discord",
+                "📊 Die Indikatoren findest du hier: https://whop.com/marketplace/trading-indicators/",
                 delete_after=20)
-        elif "indikator" in content:
+
+        elif any(word in content for word in keywords_preise):
             await message.channel.send(
-                "📊 Für den Indikator in TradingView:\nKlicke in TradingView auf Indikatoren → Invite-only Scripts.",
+                "💰 Die Preise variieren je nach Indikator. Mehr Infos hier: https://whop.com/marketplace/trading-indicators/",
+                delete_after=20)
+
+        elif any(word in content for word in keywords_erwerbbar):
+            await message.channel.send(
+                "🛒 Verfügbare Indikatoren findest du im Whop Marketplace: https://whop.com/marketplace/trading-indicators/",
                 delete_after=20)
 
     await bot.process_commands(message)
+
+@bot.event
+async def on_ready():
+    print(f"✅ Bot ist online als: {bot.user.name}")
+    channel = bot.get_channel(TICKET_CHANNEL_ID)
+    if channel:
+        await channel.send("🎟️ Brauchst du Hilfe? Klicke hier, um ein Ticket zu eröffnen:", view=TicketButton())
 
 bot.run(TOKEN)
