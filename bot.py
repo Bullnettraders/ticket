@@ -79,4 +79,10 @@ async def on_message(message):
         except Exception as e:
             await message.channel.send(f"⚠️ Fehler bei der AI-Antwort: {str(e)}")
 
+support_role_env = os.getenv('SUPPORT_ROLE_ID')
+if support_role_env is None:
+    raise ValueError("❌ Umgebungsvariable SUPPORT_ROLE_ID fehlt!")
+SUPPORT_ROLE_ID = int(support_role_env)
+
+
 bot.run(TOKEN)
