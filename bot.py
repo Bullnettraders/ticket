@@ -85,12 +85,13 @@ class TicketView(View):
         # Admin-Log senden
         log_channel = bot.get_channel(ADMIN_LOG_CHANNEL_ID)
         if log_channel:
-            await log_channel.send(
-                f"📊 Kostenübersicht:
-Benutzer: {interaction.user.mention}
-Tokenverbrauch: {tokens_used}
-Kosten: **{cost:.5f} USD**"
+            log_text = (
+                f"📊 Kostenübersicht:\n"
+                f"Benutzer: {interaction.user.mention}\n"
+                f"Tokenverbrauch: {tokens_used}\n"
+                f"Kosten: **{cost:.5f} USD**"
             )
+            await log_channel.send(log_text)
 
         close_view = CloseTicketView()
         await channel.send("Wenn dein Problem gelöst wurde, kannst du das Ticket schließen:", view=close_view)
