@@ -63,7 +63,7 @@ class TicketView(View):
             f"Auf diesem Server gibt es folgende Rollen: {', '.join(roles)}. "
             f"Die verfügbaren Textkanäle sind: {', '.join(channels)}. "
             f"Beantworte ausschließlich Fragen zum Server, zu Rollen, Kanälen oder den Regeln. "
-            f"Alle anderen Themen (z. B. Technik, Programmierung) lehnst du höflich ab."
+            f"Wenn du eine Frage nicht beantworten kannst, schreibe am Ende deiner Antwort: SUPPORT_NÖTIG."
         )
 
         messages = [
@@ -84,6 +84,11 @@ class TicketView(View):
         tokens_used, cost = estimate_openai_cost(messages)
 
         await channel.send(f"AI: {ai_reply}")
+
+        if "SUPPORT_NÖTIG" in ai_reply:
+            support_role = discord.utils.get(guild.roles, id=SUPPORT_ROLE_ID)
+            await channel.send(f"{interaction.user.mention}, ich habe dein Anliegen an den {support_role.mention} weitergeleitet.")
+            await channel.send(f"{support_role.mention}, bitte unterstützt hier im Ticket.")
 
         log_channel = bot.get_channel(ADMIN_LOG_CHANNEL_ID)
         if log_channel:
@@ -120,7 +125,7 @@ async def on_message(message):
             f"Auf diesem Server gibt es folgende Rollen: {', '.join(roles)}. "
             f"Die verfügbaren Textkanäle sind: {', '.join(channels)}. "
             f"Beantworte ausschließlich Fragen zum Server, zu Rollen, Kanälen oder den Regeln. "
-            f"Alle anderen Themen (z. B. Technik, Programmierung) lehnst du höflich ab."
+            f"Wenn du eine Frage nicht beantworten kannst, schreibe am Ende deiner Antwort: SUPPORT_NÖTIG."
         )
         messages = [
             {"role": "system", "content": info_prompt},
@@ -133,6 +138,10 @@ async def on_message(message):
             )
             ai_reply = response.choices[0].message.content
             await message.channel.send(f"AI: {ai_reply}")
+            if "SUPPORT_NÖTIG" in ai_reply:
+                support_role = discord.utils.get(message.guild.roles, id=SUPPORT_ROLE_ID)
+                await message.channel.send(f"{message.author.mention}, ich habe dein Anliegen an den {support_role.mention} weitergeleitet.")
+                await message.channel.send(f"{support_role.mention}, bitte unterstützt hier im Ticket.")
         except Exception as e:
             await message.channel.send(f"⚠️ Konnte nicht antworten: {str(e)}")
 
