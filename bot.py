@@ -22,6 +22,7 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 SUPPORT_ROLE_ID = int(os.getenv("SUPPORT_ROLE_ID"))
 CATEGORY_ID = int(os.getenv("CATEGORY_ID"))
 SUPPORT_CHANNEL_ID = int(os.getenv("SUPPORT_CHANNEL_ID"))
+ADMIN_LOG_CHANNEL_ID = int(os.getenv("ADMIN_LOG_CHANNEL_ID"))
 
 def estimate_openai_cost(messages, model="gpt-3.5-turbo"):
     encoding = tiktoken.encoding_for_model(model)
@@ -81,8 +82,15 @@ class TicketView(View):
         await channel.send(f"AI: {ai_reply}")
         await channel.send(f"🧾 Geschätzte Kosten für diese Antwort: **{cost:.5f} USD** ({tokens_used} Tokens)")
 
-        with open("usage_log.txt", "a") as f:
-            f.write(f"{interaction.user.id},{tokens_used},{cost:.5f}\n")
+        # Admin-Log senden
+        log_channel = bot.get_channel(ADMIN_LOG_CHANNEL_ID)
+        if log_channel:
+            await log_channel.send(
+                f"📊 Kostenübersicht:
+Benutzer: {interaction.user.mention}
+Tokenverbrauch: {tokens_used}
+Kosten: **{cost:.5f} USD**"
+            )
 
         close_view = CloseTicketView()
         await channel.send("Wenn dein Problem gelöst wurde, kannst du das Ticket schließen:", view=close_view)
