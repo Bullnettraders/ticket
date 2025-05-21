@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import Interaction, ButtonStyle
 from discord.ui import Button, View
-import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
@@ -15,7 +15,8 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="/", intents=intents)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 GUILD_ID = int(os.getenv("GUILD_ID"))
 SUPPORT_ROLE_ID = int(os.getenv("SUPPORT_ROLE_ID"))
 CATEGORY_ID = int(os.getenv("CATEGORY_ID"))
@@ -44,16 +45,29 @@ class TicketView(View):
 
         await channel.send(f"Hallo {interaction.user.mention}, willkommen im Support. Bitte schildere dein Problem.")
 
-        response = await openai.ChatCompletion.acreate(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Du bist ein hilfsbereiter Support-Bot."},
                 {"role": "user", "content": "Der Benutzer hat soeben ein Ticket eröffnet, bitte gib eine erste Begrüßung."}
             ]
         )
+
         await channel.send(f"AI: {response.choices[0].message.content}")
 
+        close_view = CloseTicketView()
+        await channel.send("Wenn dein Problem gelöst wurde, kannst du das Ticket schließen:", view=close_view)
+
         await interaction.response.send_message(f"Dein Ticket wurde erstellt: {channel.mention}", ephemeral=True)
+
+class CloseTicketView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="❌ Ticket schließen", style=ButtonStyle.red, custom_id="close_ticket")
+    async def close_ticket(self, interaction: Interaction, button: Button):
+        await interaction.response.send_message("Ticket wird geschlossen...", ephemeral=True)
+        await interaction.channel.delete()
 
 @bot.event
 async def on_ready():
@@ -64,7 +78,6 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-    # Automatisch Ticket-Panel senden
     channel = bot.get_channel(SUPPORT_CHANNEL_ID)
     if channel:
         view = TicketView()
