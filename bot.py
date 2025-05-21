@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import Interaction, ButtonStyle
 from discord.ui import Button, View
 from openai import OpenAI
+import tiktoken
 import os
 from dotenv import load_dotenv
 
@@ -21,6 +22,12 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 SUPPORT_ROLE_ID = int(os.getenv("SUPPORT_ROLE_ID"))
 CATEGORY_ID = int(os.getenv("CATEGORY_ID"))
 SUPPORT_CHANNEL_ID = int(os.getenv("SUPPORT_CHANNEL_ID"))
+
+def estimate_openai_cost(messages, model="gpt-3.5-turbo"):
+    encoding = tiktoken.encoding_for_model(model)
+    total_tokens = sum(len(encoding.encode(m["content"])) for m in messages)
+    price_per_1k = 0.002  # USD per 1000 tokens for gpt-3.5-turbo
+    return total_tokens, (total_tokens / 1000) * price_per_1k
 
 class TicketView(View):
     def __init__(self):
@@ -45,15 +52,37 @@ class TicketView(View):
 
         await channel.send(f"Hallo {interaction.user.mention}, willkommen im Support. Bitte schildere dein Problem.")
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Du bist ein hilfsbereiter Support-Bot."},
-                {"role": "user", "content": "Der Benutzer hat soeben ein Ticket eröffnet, bitte gib eine erste Begrüßung."}
-            ]
+        roles = [r.name for r in guild.roles if not r.is_default()]
+        channels = [c.name for c in guild.text_channels]
+
+        info_prompt = (
+            f"Du bist Kalle, der Support-Bot für den Discord-Server '{guild.name}'. "
+            f"Auf diesem Server gibt es folgende Rollen: {', '.join(roles)}. "
+            f"Die verfügbaren Textkanäle sind: {', '.join(channels)}. "
+            f"Beantworte ausschließlich Fragen zum Server, zu Rollen, Kanälen oder den Regeln. "
+            f"Alle anderen Themen (z. B. Technik, Programmierung) lehnst du höflich ab."
         )
 
-        await channel.send(f"AI: {response.choices[0].message.content}")
+        messages = [
+            {"role": "system", "content": info_prompt},
+            {"role": "user", "content": "Der Benutzer hat soeben ein Ticket eröffnet, bitte begrüße ihn."}
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+
+        ai_reply = response.choices[0].message.content
+        messages.append({"role": "assistant", "content": ai_reply})
+
+        tokens_used, cost = estimate_openai_cost(messages)
+
+        await channel.send(f"AI: {ai_reply}")
+        await channel.send(f"🧾 Geschätzte Kosten für diese Antwort: **{cost:.5f} USD** ({tokens_used} Tokens)")
+
+        with open("usage_log.txt", "a") as f:
+            f.write(f"{interaction.user.id},{tokens_used},{cost:.5f}\n")
 
         close_view = CloseTicketView()
         await channel.send("Wenn dein Problem gelöst wurde, kannst du das Ticket schließen:", view=close_view)
