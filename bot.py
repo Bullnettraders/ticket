@@ -80,9 +80,8 @@ class TicketView(View):
         tokens_used, cost = estimate_openai_cost(messages)
 
         await channel.send(f"AI: {ai_reply}")
-        await channel.send(f"🧾 Geschätzte Kosten für diese Antwort: **{cost:.5f} USD** ({tokens_used} Tokens)")
 
-        # Admin-Log senden
+        # Admin-Log senden (nur dort anzeigen)
         log_channel = bot.get_channel(ADMIN_LOG_CHANNEL_ID)
         if log_channel:
             log_text = (
